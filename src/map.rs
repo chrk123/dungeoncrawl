@@ -8,7 +8,7 @@ pub enum TileType {
 }
 
 pub fn map_idx(x: i32, y: i32) -> usize {
-    ((y + SCREEN_WIDTH) + x) as usize
+    ((y * SCREEN_WIDTH) + x) as usize
 }
 
 pub struct Map {

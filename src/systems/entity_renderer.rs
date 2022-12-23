@@ -9,10 +9,8 @@ pub fn entity_render(ecs: &SubWorld, #[resource] camera: &Camera) {
 
     let mut entities_query = <(&Point, &Render)>::query();
 
-    let camera_offset = Point::new(camera.left_x, camera.top_y);
-
     entities_query.iter(ecs).for_each(|(pos, render)| {
-        draw_batch.set(*pos - camera_offset, render.color, render.glyph);
+        draw_batch.set(camera.from_world(pos), render.color, render.glyph);
     });
 
     draw_batch.submit(5000).expect("Batch error");

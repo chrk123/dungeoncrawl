@@ -23,4 +23,12 @@ impl Camera {
         self.top_y = player_position.y - DISPLAY_HEIGHT / 2;
         self.bottom_y = player_position.y + DISPLAY_HEIGHT / 2;
     }
+
+    pub fn to_world(&self, camera_point: &Point) -> Point {
+        *camera_point + Point::new(self.left_x, self.top_y)
+    }
+
+    pub fn from_world(&self, camera_point: &Point) -> Point {
+        *camera_point - Point::new(self.left_x, self.top_y)
+    }
 }

@@ -3,6 +3,7 @@ use crate::prelude::*;
 #[system]
 #[read_component(Point)]
 #[read_component(Player)]
+#[write_component(Health)]
 pub fn player_input(
     ecs: &mut SubWorld,
     commands: &mut CommandBuffer,
@@ -10,6 +11,19 @@ pub fn player_input(
     #[resource] turn_state: &mut TurnState,
 ) {
     if let Some(key) = *key {
+        // pass the round and heal the player by one when pressing SPACE
+        if key == VirtualKeyCode::Space {
+            let mut player_health = <&mut Health>::query()
+                .filter(component::<Player>())
+                .iter_mut(ecs)
+                .nth(0)
+                .unwrap();
+            player_health.current = i32::min(player_health.max, player_health.current + 1);
+
+            *turn_state = TurnState::PlayerTurn;
+            return;
+        }
+
         let delta = match key {
             VirtualKeyCode::Left => Point::new(-1, 0),
             VirtualKeyCode::Right => Point::new(1, 0),

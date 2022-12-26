@@ -37,28 +37,38 @@ struct State {
 
 impl State {
     fn new() -> Self {
-        let mut ecs = World::default();
-        let mut resources = Resources::default();
+        let mut state = Self {
+            ecs: World::default(),
+            resources: Resources::default(),
+            input_systems: Schedule::builder().build(),
+            player_systems: Schedule::builder().build(),
+            monster_systems: Schedule::builder().build(),
+        };
+        state.reset();
+        state
+    }
+
+    fn reset(&mut self) {
+        self.ecs = World::default();
+        self.resources = Resources::default();
         let mut rng = RandomNumberGenerator::new();
         let map_builder = MapBuilder::new(&mut rng);
-        spawn_player(&mut ecs, map_builder.player_start);
+        spawn_player(&mut self.ecs, map_builder.player_start);
+        spawn_amulet_of_yala(&mut self.ecs, map_builder.amulet_start);
         map_builder
             .rooms
             .iter()
             .skip(1)
             .map(|r| r.center())
-            .for_each(|pos| spawn_monster(&mut ecs, &mut rng, pos));
+            .for_each(|pos| spawn_monster(&mut self.ecs, &mut rng, pos));
 
-        resources.insert(map_builder.map);
-        resources.insert(Camera::new(map_builder.player_start));
-        resources.insert(TurnState::AwaitingInput);
-        Self {
-            ecs,
-            resources,
-            input_systems: build_input_scheduler(),
-            player_systems: build_player_scheduler(),
-            monster_systems: build_monster_scheduler(),
-        }
+        self.resources.insert(map_builder.map);
+        self.resources.insert(Camera::new(map_builder.player_start));
+        self.resources.insert(TurnState::AwaitingInput);
+
+        self.input_systems = build_input_scheduler();
+        self.player_systems = build_player_scheduler();
+        self.monster_systems = build_monster_scheduler();
     }
 
     fn draw_game_over(&mut self, ctx: &mut BTerm) {
@@ -68,25 +78,19 @@ impl State {
 
         if let Some(key) = ctx.key {
             if key == VirtualKeyCode::Return {
-                self.ecs = World::default();
-                self.resources = Resources::default();
-                let mut rng = RandomNumberGenerator::new();
-                let map_builder = MapBuilder::new(&mut rng);
-                spawn_player(&mut self.ecs, map_builder.player_start);
-                map_builder
-                    .rooms
-                    .iter()
-                    .skip(1)
-                    .map(|r| r.center())
-                    .for_each(|pos| spawn_monster(&mut self.ecs, &mut rng, pos));
+                self.reset();
+            }
+        }
+    }
 
-                self.resources.insert(map_builder.map);
-                self.resources.insert(Camera::new(map_builder.player_start));
-                self.resources.insert(TurnState::AwaitingInput);
+    fn draw_victory(&mut self, ctx: &mut BTerm) {
+        ctx.set_active_console(2);
+        ctx.print_color_centered(2, GREEN, BLACK, "You have saved the world, hero!");
+        ctx.print_color_centered(4, WHITE, BLACK, "Press 'return' to save the world again.");
 
-                self.input_systems = build_input_scheduler();
-                self.player_systems = build_player_scheduler();
-                self.monster_systems = build_monster_scheduler();
+        if let Some(key) = ctx.key {
+            if key == VirtualKeyCode::Return {
+                self.reset();
             }
         }
     }
@@ -116,6 +120,7 @@ impl GameState for State {
                 .monster_systems
                 .execute(&mut self.ecs, &mut self.resources),
             TurnState::GameOver => self.draw_game_over(ctx),
+            TurnState::Victory => self.draw_victory(ctx),
         }
 
         render_draw_buffer(ctx).expect("Render error");

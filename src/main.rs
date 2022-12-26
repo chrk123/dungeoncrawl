@@ -60,6 +60,36 @@ impl State {
             monster_systems: build_monster_scheduler(),
         }
     }
+
+    fn draw_game_over(&mut self, ctx: &mut BTerm) {
+        ctx.set_active_console(2);
+        ctx.print_color_centered(2, RED, BLACK, "You have been slain by the enemy.");
+        ctx.print_color_centered(4, WHITE, BLACK, "Press 'return' to respawn.");
+
+        if let Some(key) = ctx.key {
+            if key == VirtualKeyCode::Return {
+                self.ecs = World::default();
+                self.resources = Resources::default();
+                let mut rng = RandomNumberGenerator::new();
+                let map_builder = MapBuilder::new(&mut rng);
+                spawn_player(&mut self.ecs, map_builder.player_start);
+                map_builder
+                    .rooms
+                    .iter()
+                    .skip(1)
+                    .map(|r| r.center())
+                    .for_each(|pos| spawn_monster(&mut self.ecs, &mut rng, pos));
+
+                self.resources.insert(map_builder.map);
+                self.resources.insert(Camera::new(map_builder.player_start));
+                self.resources.insert(TurnState::AwaitingInput);
+
+                self.input_systems = build_input_scheduler();
+                self.player_systems = build_player_scheduler();
+                self.monster_systems = build_monster_scheduler();
+            }
+        }
+    }
 }
 
 impl GameState for State {
@@ -85,6 +115,7 @@ impl GameState for State {
             TurnState::MonsterTurn => self
                 .monster_systems
                 .execute(&mut self.ecs, &mut self.resources),
+            TurnState::GameOver => self.draw_game_over(ctx),
         }
 
         render_draw_buffer(ctx).expect("Render error");

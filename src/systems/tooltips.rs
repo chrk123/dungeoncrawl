@@ -4,6 +4,8 @@ use crate::prelude::*;
 #[read_component(Point)]
 #[read_component(Name)]
 #[read_component(Health)]
+#[read_component(FieldOfView)]
+#[read_component(Player)]
 pub fn tooltips(ecs: &SubWorld, #[resource] mouse_in_camera: &Point, #[resource] camera: &Camera) {
     let mut positions = <(Entity, &Point, &Name)>::query();
 
@@ -12,9 +14,17 @@ pub fn tooltips(ecs: &SubWorld, #[resource] mouse_in_camera: &Point, #[resource]
     let mut draw_batch = DrawBatch::new();
     draw_batch.target(2);
 
+    let fov = <&FieldOfView>::query()
+        .filter(component::<Player>())
+        .iter(ecs)
+        .nth(0)
+        .unwrap();
+
     positions
         .iter(ecs)
-        .filter(|(_, pos, _)| **pos == mouse_in_world)
+        .filter(|(_, pos, _)| {
+            **pos == mouse_in_world && fov.visible_tiles.contains(&mouse_in_world)
+        })
         .for_each(|(entity, _, name)| {
             let screen_pos = *mouse_in_camera * 4;
             let display =

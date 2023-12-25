@@ -13,7 +13,7 @@ pub fn player_input(
     if let Some(key) = *key {
         // pass the round and heal the player by one when pressing SPACE
         if key == VirtualKeyCode::Space {
-            let mut player_health = <&mut Health>::query()
+            let player_health = <&mut Health>::query()
                 .filter(component::<Player>())
                 .iter_mut(ecs)
                 .nth(0)

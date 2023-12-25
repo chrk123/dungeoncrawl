@@ -32,6 +32,19 @@ impl MapBuilder {
         self.map.tiles.iter_mut().for_each(|t| *t = tile);
     }
 
+    fn fill_boundary(&mut self, tile: TileType) {
+        for x in [0, SCREEN_WIDTH - 1] {
+            for y in 0..SCREEN_HEIGHT {
+                self.map.tiles[map_idx(x, y)] = tile;
+            }
+        }
+        for y in [0, SCREEN_HEIGHT - 1] {
+            for x in 0..SCREEN_WIDTH {
+                self.map.tiles[map_idx(x, y)] = tile;
+            }
+        }
+    }
+
     fn find_most_distant(&self) -> Point {
         let dijkstra_map = DijkstraMap::new(
             SCREEN_WIDTH,

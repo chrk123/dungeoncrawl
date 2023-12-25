@@ -18,6 +18,8 @@ impl MapArchitect for CellularAutomataArchitect {
             self.iteration(&mut mb.map);
         }
 
+        mb.fill_boundary(TileType::Wall);
+
         let start = self.find_start(&mb.map);
         mb.monster_spawns = mb.spawn_monsters(&start, rng);
         mb.player_start = start;

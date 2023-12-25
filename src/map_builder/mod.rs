@@ -12,6 +12,7 @@ trait MapArchitect {
 }
 
 const NUM_ROOMS: usize = 20;
+const UNREACHABLE: &f32 = &f32::MAX;
 
 pub struct MapBuilder {
     pub map: Map,
@@ -54,7 +55,6 @@ impl MapBuilder {
             1024.0,
         );
 
-        const UNREACHABLE: &f32 = &f32::MAX;
         self.map.index_to_point2d(
             dijkstra_map
                 .map
@@ -132,6 +132,15 @@ impl MapBuilder {
 
     fn spawn_monsters(&self, start: &Point, rng: &mut RandomNumberGenerator) -> Vec<Point> {
         const NUM_MONSTERS: usize = 50;
+
+        let dijkstra_map = DijkstraMap::new(
+            SCREEN_WIDTH,
+            SCREEN_HEIGHT,
+            &vec![self.map.point2d_to_index(*start)],
+            &self.map,
+            1024.0,
+        );
+
         let mut spawnable_tiles: Vec<Point> = self
             .map
             .tiles
@@ -141,6 +150,7 @@ impl MapBuilder {
                 **t == TileType::Floor
                     && DistanceAlg::Pythagoras.distance2d(*start, self.map.index_to_point2d(*idx))
                         > 10.0
+                    && dijkstra_map.map[*idx] < *UNREACHABLE
             })
             .map(|(idx, _)| self.map.index_to_point2d(idx))
             .collect();
